@@ -3,9 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>3D maker borrow</title>
+
+  <!-- FullCalendar -->
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+  <style>
+    #calendar {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+
 </head>
 <body>
-    <div>blog3.0</div>
+    <h1>3D maker borrow</h1>
+    <p>借用人</p>
+    <input type="text" id="name" name="name" required>
+    <p>借用日期</p>
+    <input type="date" id="date" name="date" required>
+    <label for="options">選擇機器:</label>
+    <select id="options" name="options">
+        <option value="雷射切割機">雷射切割機</option>
+        <option value="3D列印機">3D列印機</option>
+    </select>
+    <button type="submit" id="submit">借用</button>
+    
+    <!-- 這是日曆將被渲染的位置 -->
+  <div id="calendar"></div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+
+      // 初始化 FullCalendar
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth', // 設定月視圖
+        initialDate: '2024-10-01',   // 初始化日曆的月份
+        locale: 'zh-tw',             // 設定語言為繁體中文
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: function(fetchInfo, successCallback, failureCallback) {
+        fetch('https://script.google.com/macros/s/AKfycbw15oq6gGozcCZFQls6kiRnQyfpObJlGAqHo26np6aKKOCudMB9wrQs4YGajANZXVCN/exec')
+        .then(response => response.json())
+        .then(data => {
+          let events = data.map(function(record) {
+            return {
+              title: record.name + ' 借用 ' + record.equipment,
+              start: record.date
+            };
+          });
+          successCallback(events);
+        })
+        .catch(error => {
+          console.error('Error fetching events:', error);
+        });
+        }
+      });
+
+      // 渲染日曆
+      calendar.render();
+    });
+
+    document.getElementById('submit').addEventListener('click', function(e) {
+   e.preventDefault(); // 在这里声明 e，防止表单默认提交
+
+   var borrower = document.getElementById('name').value;
+   var borrowDate = document.getElementById('date').value;
+   var machine = document.getElementById('options').value;
+
+   if (borrower && borrowDate) {
+     // 顯示借用訊息（這裡可以加入其他處理邏輯）
+     alert(borrower + ' 已成功借用 ' + borrowDate + ' 的 ' + machine);
+
+     // 清空表單
+     document.getElementById('name').value = '';
+     document.getElementById('date').value = '';
+   }
+
+   var name = document.getElementById('name').value;
+   var date = document.getElementById('date').value;
+   var equipment = document.getElementById('options').value; // 确保这个ID与HTML中的匹配
+
+   var data = {
+     name: name,
+     date: date,
+     equipment: equipment
+   };
+
+   fetch('https://script.google.com/macros/s/AKfycbw15oq6gGozcCZFQls6kiRnQyfpObJlGAqHo26np6aKKOCudMB9wrQs4YGajANZXVCN/exec', {
+     method: 'POST',
+     mode:"no-cors",
+     body: JSON.stringify(data),
+     headers: {
+       'Content-Type': 'application/json'
+     }
+     
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.result === 'success') {
+        alert('資料已成功提交！');
+      } else {
+        alert('提交失敗，請重試！');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  });
+
+  </script>
+    
 </body>
 </html>
