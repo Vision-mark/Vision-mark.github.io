@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D maker borrow</title>
 
+  
   <!-- FullCalendar -->
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
   <style>
@@ -32,7 +33,7 @@
     <!-- 這是日曆將被渲染的位置 -->
   <div id="calendar"></div>
   
-  <script>
+  <script type="module">
     document.addEventListener('DOMContentLoaded', function() {
       var calendarEl = document.getElementById('calendar');
 
@@ -47,75 +48,71 @@
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         events: function(fetchInfo, successCallback, failureCallback) {
-        fetch('https://script.google.com/macros/s/AKfycbw15oq6gGozcCZFQls6kiRnQyfpObJlGAqHo26np6aKKOCudMB9wrQs4YGajANZXVCN/exec')
-        .then(response => response.json())
-        .then(data => {
-          let events = data.map(function(record) {
-            return {
-              title: record.name + ' 借用 ' + record.equipment,
-              start: record.date
-            };
-          });
-          successCallback(events);
-        })
-        .catch(error => {
-          console.error('Error fetching events:', error);
-        });
-        }
+              // 從 Firestore 獲取借用記錄
+              db.collection("borrowRecords").get().then((querySnapshot) => {
+                let events = [];
+                querySnapshot.forEach((doc) => {
+                  let record = doc.data();
+                  events.push({
+                    title: record.name + ' 借用 ' + record.equipment,
+                    start: record.date
+                  });
+                });
+                successCallback(events);
+              }).catch((error) => {
+                console.error("Error fetching events: ", error);
+                failureCallback(error);
+              });
+            }
       });
 
       // 渲染日曆
       calendar.render();
     });
 
-    document.getElementById('submit').addEventListener('click', function(e) {
-   e.preventDefault(); // 在这里声明 e，防止表单默认提交
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4ZkSZtOducildy3Fpn_laTcDLTJ399WE",
+      authDomain: "borrow-cc97f.firebaseapp.com",
+      projectId: "borrow-cc97f",
+      storageBucket: "borrow-cc97f.appspot.com",
+      messagingSenderId: "50856364136",
+      appId: "1:50856364136:web:5a709798964f32766f93dd",
+      measurementId: "G-DWKV8SH51G"
+    };
 
-   var borrower = document.getElementById('name').value;
-   var borrowDate = document.getElementById('date').value;
-   var machine = document.getElementById('options').value;
+        // 初始化 Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-   if (borrower && borrowDate) {
-     // 顯示借用訊息（這裡可以加入其他處理邏輯）
-     alert(borrower + ' 已成功借用 ' + borrowDate + ' 的 ' + machine);
+        document.getElementById('submit').addEventListener('click', function(e) {
+          e.preventDefault(); // 阻止表單預設提交
 
-     // 清空表單
-     document.getElementById('name').value = '';
-     document.getElementById('date').value = '';
-   }
+          var borrower = document.getElementById('name').value;
+          var borrowDate = document.getElementById('date').value;
+          var machine = document.getElementById('options').value;
 
-   var name = document.getElementById('name').value;
-   var date = document.getElementById('date').value;
-   var equipment = document.getElementById('options').value; // 确保这个ID与HTML中的匹配
-
-   var data = {
-     name: name,
-     date: date,
-     equipment: equipment
-   };
-
-   fetch('https://script.google.com/macros/s/AKfycbw15oq6gGozcCZFQls6kiRnQyfpObJlGAqHo26np6aKKOCudMB9wrQs4YGajANZXVCN/exec', {
-     method: 'POST',
-     mode:"no-cors",
-     body: JSON.stringify(data),
-     headers: {
-       'Content-Type': 'application/json'
-     }
-     
-    })
-    .then(response => response.json())
-    .then(result => {
-      if (result.result === 'success') {
-        alert('資料已成功提交！');
-      } else {
-        alert('提交失敗，請重試！');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
-  });
-
+          if (borrower && borrowDate) {
+            // 存儲借用信息到 Firestore
+            db.collection("borrowRecords").add({
+              name: borrower,
+              date: borrowDate,
+              equipment: machine
+            })
+            .then(() => {
+              alert(borrower + ' 已成功借用 ' + borrowDate + ' 的 ' + machine);
+              
+              // 清空表單
+              document.getElementById('name').value = '';
+              document.getElementById('date').value = '';
+            })
+            .catch((error) => {
+              console.error("Error adding document: ", error);
+            });
+          }
+        });
   </script>
     
 </body>
